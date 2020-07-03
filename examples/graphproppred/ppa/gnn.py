@@ -4,9 +4,45 @@ from torch_geometric.nn import global_add_pool, global_mean_pool, global_max_poo
 import torch.nn.functional as F
 from torch_geometric.nn.inits import uniform
 
-from conv import GNN_node, GNN_node_Virtualnode
+from conv import GNN_node, GNN_node_Virtualnode, GATLayer
 
 from torch_scatter import scatter_mean
+
+class GAT(torch.nn.Module):
+    def __init__(self, num_class, num_layer = 5, emb_dim = 256, num_heads=8):
+        super(GAT, self).__init__()
+
+        self.num_class = num_class
+        self.emb_dim = emb_dim
+        self.num_layer = num_layer
+
+        # node feature dimension 2;
+        # edge feature dimension 9;
+        self.node_encoder = torch.nn.Embedding(2, emb_dim) # uniform input node embedding
+        self.edge_encoder = torch.nn.Linear(9, emb_dim)
+
+        self.layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
+
+        #GATLayer(self, emb_dim, num_heads):
+        self.layers = nn.ModuleList([GATLayer(emb_dim, num_heads) for _ in range(num_layer)])
+
+        self.graph_pred_linear = torch.nn.Linear(self.emb_dim, self.num_class)
+        
+    def forward(self, x, edge_index, edge_attr, batch, batch_size):
+        #x, edge_index, edge_attr, batch = batched_data.x, batched_data.edge_index, batched_data.edge_attr, batched_data.batch
+        # node embedding.
+        n_emb = self.node_encoder(x)
+        e_emb = self.edge_encoder(edge_attr)    
+
+        h = self.layer_norm(n_emb)
+
+        for layer in range(self.num_layer):
+            # def forward(self, node_embed, edge_emb, edge_index):
+            h = self.layers[layer](h, e_emb, edge_index)
+
+        h_graph = h[-batch_size:]
+        return self.graph_pred_linear(h_graph)
+
 
 class GNN(torch.nn.Module):
 

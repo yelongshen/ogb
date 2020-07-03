@@ -7,6 +7,8 @@ from torch_geometric.utils import degree
 
 import math
 
+
+
 ### GIN convolution along the graph structure
 class GINConv(MessagePassing):
     def __init__(self, emb_dim):
