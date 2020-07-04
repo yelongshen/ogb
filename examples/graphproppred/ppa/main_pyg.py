@@ -176,7 +176,7 @@ def main():
         model = GNN(gnn_type = 'gcn', num_class = dataset.num_classes, num_layer = args.num_layer, emb_dim = args.emb_dim, drop_ratio = args.drop_ratio, virtual_node = True).to(device)
     elif args.gnn == 'gat':
         #def __init__(self, num_class, num_layer = 5, emb_dim = 256, num_heads=8):
-        model = GAT(num_class = dataset.num_classes, num_layer = args.num_layer, emb_dim = args.emb_dim, num_heads = 8)
+        model = GAT(num_class = dataset.num_classes, num_layer = args.num_layer, emb_dim = args.emb_dim, num_heads = 8).to(device)
         is_virtual_node = True
     else:
         raise ValueError('Invalid GNN type')
