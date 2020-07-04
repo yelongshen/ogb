@@ -105,8 +105,8 @@ def train(model, device, loader, optimizer, is_virtual_node = False):
                       total=bar.elapsed_td,
                       eta=bar.eta_td,
                       avg_loss=avg_loss)
-
-
+        if step % 10 == 0:
+            print(bar.suffix)
         bar.next()
     bar.finish()
 def eval(model, device, loader, evaluator, is_virtual_node = False):
