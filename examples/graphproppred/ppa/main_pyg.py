@@ -10,6 +10,8 @@ import time
 import numpy as np
 
 import torch.nn.functional as F
+from util import AverageMeter
+
 
 ### importing OGB
 from ogb.graphproppred import PygGraphPropPredDataset, Evaluator
@@ -64,6 +66,7 @@ def add_virtualnode(graph, device):
     vn_y = graph.y.to(device)
 
     return vn_x, vn_batch, vn_edge_index, vn_edge_attr, vn_y
+
 
 
 def train(model, device, loader, optimizer, is_virtual_node = False):
