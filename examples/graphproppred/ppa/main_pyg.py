@@ -68,6 +68,9 @@ def add_virtualnode(graph, device):
 
 def train(model, device, loader, optimizer, is_virtual_node = False):
     model.train()
+    avg_loss = AverageMeter()
+    
+    bar = Bar('training', max=len(loader))
 
     for step, batch in enumerate(tqdm(loader, desc="Iteration")):
         
@@ -86,9 +89,22 @@ def train(model, device, loader, optimizer, is_virtual_node = False):
             
             optimizer.zero_grad()
             loss = multicls_criterion(pred.to(torch.float32), y.view(-1,))
+            avg_loss.update(loss.item())
+
             loss.backward()
             optimizer.step()
 
+
+        bar.suffix = '({step}/{size}) Total: {total:} | ETA: {eta:} | avg_loss: {avg_loss.val:.3f} ({avg_loss.avg:.3f})'.format(
+                      step=step,
+                      size=len(loader),
+                      total=bar.elapsed_td,
+                      eta=bar.eta_td,
+                      avg_loss=avg_loss)
+
+
+        bar.next()
+    bar.finish()
 def eval(model, device, loader, evaluator, is_virtual_node = False):
     model.eval()
     y_true = []
