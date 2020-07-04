@@ -66,9 +66,10 @@ class GATLayer(torch.nn.Module):
 
         print(att_probs.shape)
         new_v = att_probs.view( *(att_probs.size()[:] + (1,)) ) * v
+        new_v = new_v.view(new_v.shape[0], -1)
         
         print(new_v.shape)
-        
+
         att_v = torch_scatter.scatter_add(new_v, edge_index[1], dim=0)
         
         print(att_v.shape)
