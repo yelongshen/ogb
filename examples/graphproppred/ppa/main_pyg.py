@@ -11,6 +11,7 @@ import numpy as np
 
 import torch.nn.functional as F
 from util import AverageMeter
+from progress.bar import Bar as Bar
 
 
 ### importing OGB
