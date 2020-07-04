@@ -226,8 +226,10 @@ def main():
         train_curve.append(train_perf[dataset.eval_metric])
         valid_curve.append(valid_perf[dataset.eval_metric])
         test_curve.append(test_perf[dataset.eval_metric])
-        
+
         if not args.filename == '':
+            best_val_epoch = np.argmax(np.array(valid_curve))
+            best_train = max(train_curve)
             torch.save({'Val': valid_curve[best_val_epoch], 'Test': test_curve[best_val_epoch], 'Train': train_curve[best_val_epoch], 'BestTrain': best_train}, args.filename)
 
     best_val_epoch = np.argmax(np.array(valid_curve))
