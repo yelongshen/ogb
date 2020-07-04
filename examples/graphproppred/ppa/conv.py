@@ -64,15 +64,15 @@ class GATLayer(torch.nn.Module):
         # [E, num_heads]
         att_probs = torch_scatter.composite.scatter_softmax(att, edge_index[0], dim=0)
 
-        print(att_probs.shape)
+        #print(att_probs.shape)
         new_v = att_probs.view( *(att_probs.size()[:] + (1,)) ) * v
         new_v = new_v.view(new_v.shape[0], -1)
-        
-        print(new_v.shape)
+
+        #print(new_v.shape)
 
         att_v = torch_scatter.scatter_add(new_v, edge_index[1], dim=0)
         
-        print(att_v.shape)
+        #print(att_v.shape)
 
         att_h = self.out_proj(att_v)
 
