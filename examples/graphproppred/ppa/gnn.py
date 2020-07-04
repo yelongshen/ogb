@@ -24,7 +24,7 @@ class GAT(torch.nn.Module):
         self.layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
 
         #GATLayer(self, emb_dim, num_heads):
-        self.layers = nn.ModuleList([GATLayer(emb_dim, num_heads) for _ in range(num_layer)])
+        self.layers = torch.nn.ModuleList([GATLayer(emb_dim, num_heads) for _ in range(num_layer)])
 
         self.graph_pred_linear = torch.nn.Linear(self.emb_dim, self.num_class)
         
