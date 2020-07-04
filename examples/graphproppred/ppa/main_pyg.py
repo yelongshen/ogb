@@ -115,7 +115,6 @@ def eval(model, device, loader, evaluator, is_virtual_node = False):
     y_pred = []
 
     for step, batch in enumerate(tqdm(loader, desc="Iteration")):
-        batch = batch.to(device)
 
         if batch.x.shape[0] == 1:
             pass
@@ -125,6 +124,7 @@ def eval(model, device, loader, evaluator, is_virtual_node = False):
                 batch_size = batch.y.shape[0]
                 pred = model(x, edge_index, edge_attr, vn_batch, batch_size)
             else:
+                batch = batch.to(device)
                 with torch.no_grad():
                     pred = model(batch)
                 y = batch.y
