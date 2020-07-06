@@ -20,8 +20,8 @@ class GATLayer(torch.nn.Module):
         
         #self.edge_encoder = torch.nn.Linear(7, emb_dim)
         self.q_proj = torch.nn.Linear(emb_dim, emb_dim)
-        self.k_proj = torch.nn.Linear(2 * emb_dim, emb_dim)
-        self.v_proj = torch.nn.Linear(2 * emb_dim, emb_dim)
+        self.k_proj = torch.nn.Linear(emb_dim, emb_dim)
+        self.v_proj = torch.nn.Linear(emb_dim, emb_dim)
 
         self.num_heads = num_heads
         self.head_size = (int)(emb_dim / num_heads)
@@ -48,7 +48,7 @@ class GATLayer(torch.nn.Module):
         x_j = node_embed[edge_index[1]]
 
         #edge_embedding = self.edge_encoder(edge_attr)
-        nei_x = torch.cat([edge_emb, x_j], 1)
+        nei_x = edge_emb + x_j # torch.cat([edge_emb, x_j], 1)
 
         q = self.q_proj(x_i)
         k = self.k_proj(nei_x)
