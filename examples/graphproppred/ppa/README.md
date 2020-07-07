@@ -30,6 +30,8 @@ python main_pyg.py --gnn gat --filename /tmp/gat_ppa --device 1 --batch_size 32 
 
 python main_pyg.py --gnn gat --filename /tmp/gat_ppa_v2 --device 1 --batch_size 32 --lr 0.0001
 
+python main_pyg.py --gnn gat --filename /tmp/gat_ppa_v3 --device 2 --batch_size 32 --lr 0.001
+
 python main_pyg.py --gnn gat --filename /tmp/gat_v2_ppa --device 0 --batch_size 32 --lr 0.001
 
 python main_pyg.py --gnn gat --filename /tmp/gat_v2_ppa --device 0 --batch_size 32 --lr 0.001

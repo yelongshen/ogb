@@ -36,7 +36,7 @@ class GAT(torch.nn.Module):
         x, edge_index, edge_attr, batch = batched_data.x, batched_data.edge_index, batched_data.edge_attr, batched_data.batch
         h_list = [self.node_encoder(x)]
         for layer in range(self.num_layer):
-            h = self.convs[layer](h_list[layer], edge_index, edge_attr)
+            h = self.layers[layer](h_list[layer], edge_index, edge_attr)
             #h = self.batch_norms[layer](h)
             if layer < self.num_layer - 1:
                 h = F.relu(h)
