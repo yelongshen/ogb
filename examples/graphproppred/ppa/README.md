@@ -28,9 +28,6 @@ python main_pyg.py --gnn gat --filename /tmp/gat_ppa --device 1 --batch_size 32 
 
 python main_pyg.py --gnn gat --filename /tmp/gat_ppa --device 1 --batch_size 32 --lr 0.0001
 
-python main_pyg.py --gnn gat --filename /tmp/gat_ppa_v2 --device 1 --batch_size 32 --lr 0.0001
-
-python main_pyg.py --gnn gat --filename /tmp/gat_ppa_v3 --device 2 --batch_size 32 --lr 0.001
 
 python main_pyg.py --gnn gat --filename /tmp/gat_v2_ppa --device 0 --batch_size 32 --lr 0.001
 
@@ -42,3 +39,10 @@ python main_pyg.py --gnn gat --filename /tmp/gat_v2_ppa --device 0 --batch_size 
 [2] Kipf, T. N., & Welling, M. (2017). Semi-supervised classification with graph convolutional networks. ICLR 2017
 
 [3] Gilmer, J., Schoenholz, S. S., Riley, P. F., Vinyals, O., & Dahl, G. E. Neural message passing for quantum chemistry. ICML 2017.
+
+
+
+python main_pyg.py --gnn gat --filename /tmp/gat_ppa_v2 --device 1 --batch_size 32 --lr 0.0001
+
+python main_pyg.py --gnn gat --filename /tmp/gat_ppa_v3 --device 2 --batch_size 32 --lr 0.001
+

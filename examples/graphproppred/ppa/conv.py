@@ -96,20 +96,110 @@ class GATLayer(torch.nn.Module):
         #self.eps = torch.nn.Parameter(torch.Tensor([0]))
         #self.edge_encoder = torch.nn.Linear(7, emb_dim)
         self.edge_encoder = torch.nn.Linear(7, emb_dim)
-        self.mlp = torch.nn.Sequential(torch.nn.Linear(emb_dim, 2*emb_dim), torch.nn.BatchNorm1d(2*emb_dim), torch.nn.ReLU(), torch.nn.Linear(2*emb_dim, emb_dim))
-        self.eps = torch.nn.Parameter(torch.Tensor([0]))
+        
+        #self.mlp = torch.nn.Sequential(torch.nn.Linear(emb_dim, 2*emb_dim), torch.nn.BatchNorm1d(2*emb_dim), torch.nn.ReLU(), torch.nn.Linear(2*emb_dim, emb_dim))
+        #self.eps = torch.nn.Parameter(torch.Tensor([0]))
+        
         #self.h_dropout = nn.Dropout(hid_dropout)
         #self.final_layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
 
+        self.q_proj = torch.nn.Linear(emb_dim, emb_dim)
+        self.k_proj = torch.nn.Linear(emb_dim, emb_dim)
+        self.v_proj = torch.nn.Linear(emb_dim, emb_dim)
+
+        #self.layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
+        self.out_proj = torch.nn.Linear(emb_dim, emb_dim)
+
+        self.fc1 = torch.nn.Linear(emb_dim, emb_dim * 2)
+        self.fc2 = torch.nn.Linear(emb_dim * 2, emb_dim)
+        self.h_dropout = nn.Dropout(hid_dropout)
+
+        self.num_heads = num_heads
+        self.head_size = int(emb_dim / num_heads)
+
+    def split_head(self, x):
+        # E * num_heads, head_size
+        new_x_shape = x.size()[:-1] + (self.num_heads, self.head_size)
+        return x.view(*new_x_shape)
+        # [E, num_heads, head_size]
+        #return x  #x.permute(1, 0, 2).contiguous()
+
     def forward(self, node_embed, edge_index, edge_attr):
+        # GIN model.
+        #edge_emb = self.edge_encoder(edge_attr)
+        #x_j = node_embed[edge_index[1]]
+        #x_j = F.relu(edge_emb + x_j)
+        #_v = torch_scatter.scatter_add(x_j, edge_index[0], dim=0)
+        #out = self.mlp((1 + self.eps) * node_embed +  _v)
+        #return out
+
+        # GAN Model.
         edge_emb = self.edge_encoder(edge_attr)
-        #x_i = node_embed[edge_index[0]]
+        x_i = node_embed[edge_index[0]]
         x_j = node_embed[edge_index[1]]
-        #edge_embedding = self.edge_encoder(edge_attr)
+
         x_j = F.relu(edge_emb + x_j) # torch.cat([edge_emb, x_j], 1)
-        _v = torch_scatter.scatter_add(x_j, edge_index[0], dim=0)
-        out = self.mlp((1 + self.eps) * node_embed +  _v)
-        return out
+        q = self.q_proj(x_i)
+        k = self.k_proj(x_j)
+        v = self.v_proj(x_j)
+
+        q = self.split_head(q)
+        k = self.split_head(k)
+        #[E, num_heads, head_size]
+        v = self.split_head(v)
+
+        att = (q * k).sum(dim=2).view(-1, self.num_heads) / math.sqrt(self.head_size)
+        # [E, num_heads]
+        att_probs = torch_scatter.composite.scatter_softmax(att, edge_index[0], dim=0)
+
+        #print(att_probs.shape)
+        new_v = att_probs.view( *(att_probs.size()[:] + (1,)) ) * v
+        new_v = new_v.view(new_v.shape[0], -1)
+
+        att_v = torch_scatter.scatter_add(new_v, edge_index[0], dim=0)
+        
+        #att_h = self.out_proj(att_v)
+
+        h0 = att_v + node_embed
+        #h0 = self.layer_norm(att_h + node_embed)
+
+        h1 = self.fc1(h0)
+        h1 = F.relu(h1)
+        h2 = self.fc2(h1)
+        #h = self.final_layer_norm(h0 + h2)
+        return h0 + h2
+        
+        #x_i = node_embed[edge_index[0]]
+        #edge_embedding = self.edge_encoder(edge_attr)
+        
+
+# class GATLayer(torch.nn.Module):
+#     def __init__(self, emb_dim, num_heads):
+#         '''
+#             emb_dim (int): node embedding dimensionality
+#         '''
+#         #super(GATLayer, self).__init__(aggr = "add")
+#         super().__init__()
+#         #self.mlp = torch.nn.Sequential(torch.nn.Linear(emb_dim, 2*emb_dim), torch.nn.BatchNorm1d(2*emb_dim), torch.nn.ReLU(), torch.nn.Linear(2*emb_dim, emb_dim))
+#         #self.eps = torch.nn.Parameter(torch.Tensor([0]))
+#         #self.edge_encoder = torch.nn.Linear(7, emb_dim)
+#         self.edge_encoder = torch.nn.Linear(7, emb_dim)
+#         self.mlp = torch.nn.Sequential(torch.nn.Linear(emb_dim, 2*emb_dim), torch.nn.BatchNorm1d(2*emb_dim), torch.nn.ReLU(), torch.nn.Linear(2*emb_dim, emb_dim))
+#         self.eps = torch.nn.Parameter(torch.Tensor([0]))
+#         #self.h_dropout = nn.Dropout(hid_dropout)
+#         #self.final_layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
+
+#     def forward(self, node_embed, edge_index, edge_attr):
+#         edge_emb = self.edge_encoder(edge_attr)
+#         #x_i = node_embed[edge_index[0]]
+#         x_j = node_embed[edge_index[1]]
+#         #edge_embedding = self.edge_encoder(edge_attr)
+#         x_j = F.relu(edge_emb + x_j) # torch.cat([edge_emb, x_j], 1)
+#         _v = torch_scatter.scatter_add(x_j, edge_index[0], dim=0)
+#         out = self.mlp((1 + self.eps) * node_embed +  _v)
+#         return out
+
+
 
 ### GIN convolution along the graph structure
 class GINConv(MessagePassing):
