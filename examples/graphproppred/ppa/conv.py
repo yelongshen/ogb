@@ -108,11 +108,12 @@ class GATLayer(torch.nn.Module):
         self.v_proj = torch.nn.Linear(emb_dim, emb_dim)
 
         #self.layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
-        self.out_proj = torch.nn.Linear(emb_dim, emb_dim)
+        #self.out_proj = torch.nn.Linear(emb_dim, emb_dim)
 
         self.fc1 = torch.nn.Linear(emb_dim, emb_dim * 2)
         self.fc2 = torch.nn.Linear(emb_dim * 2, emb_dim)
-        self.h_dropout = nn.Dropout(hid_dropout)
+        
+        #self.h_dropout = torch.nn.Dropout(hid_dropout)
 
         self.num_heads = num_heads
         self.head_size = int(emb_dim / num_heads)
@@ -168,7 +169,7 @@ class GATLayer(torch.nn.Module):
         h2 = self.fc2(h1)
         #h = self.final_layer_norm(h0 + h2)
         return h0 + h2
-        
+
         #x_i = node_embed[edge_index[0]]
         #edge_embedding = self.edge_encoder(edge_attr)
         

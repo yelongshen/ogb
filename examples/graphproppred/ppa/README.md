@@ -46,3 +46,4 @@ python main_pyg.py --gnn gat --filename /tmp/gat_ppa_v2 --device 1 --batch_size 
 
 python main_pyg.py --gnn gat --filename /tmp/gat_ppa_v3 --device 2 --batch_size 32 --lr 0.001
 
+python main_pyg.py --gnn gat --filename /tmp/gat_ppa_v4 --device 3 --batch_size 32 --lr 0.0001
