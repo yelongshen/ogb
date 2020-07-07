@@ -44,6 +44,7 @@ def add_virtualnode(graph, device):
     for b in range(0, batch_size):
         root_id = old_node_num + b
         
+        
         for s in range(vn_node_num[b]):
             n_edges_1.append(root_id)
             n_edges_2.append(s_idx + s)

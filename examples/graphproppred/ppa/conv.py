@@ -27,13 +27,13 @@ class GATLayer(torch.nn.Module):
         self.head_size = (int)(emb_dim / num_heads)
 
         self.out_proj = torch.nn.Linear(emb_dim, emb_dim)
-        self.layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
+        #self.layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
 
         self.fc1 = torch.nn.Linear(emb_dim, emb_dim * 2)
         self.fc2 = torch.nn.Linear(emb_dim * 2, emb_dim)
         #self.h_dropout = nn.Dropout(hid_dropout)
 
-        self.final_layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
+        #self.final_layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
 
 
     def split_head(self, x):
@@ -48,11 +48,11 @@ class GATLayer(torch.nn.Module):
         x_j = node_embed[edge_index[1]]
 
         #edge_embedding = self.edge_encoder(edge_attr)
-        nei_x = edge_emb + x_j # torch.cat([edge_emb, x_j], 1)
+        x_j = edge_emb + x_j # torch.cat([edge_emb, x_j], 1)
 
         q = self.q_proj(x_i)
-        k = self.k_proj(nei_x)
-        v = self.v_proj(nei_x)
+        k = self.k_proj(x_j)
+        v = self.v_proj(x_j)
 
         q = self.split_head(q)
         k = self.split_head(k)
@@ -76,12 +76,12 @@ class GATLayer(torch.nn.Module):
         att_h = self.out_proj(att_v)
 
         #h0 = att_h + node_embed
-        h0 = self.layer_norm(att_h + node_embed)
+        h0 = att_h + node_embed # self.layer_norm(att_h + node_embed)
 
         h1 = self.fc1(h0)
         h1 = F.gelu(h1)
         h2 = self.fc2(h1)
-        h = self.final_layer_norm(h0 + h2)
+        h = h0 + h2 # self.final_layer_norm(h0 + h2)
 
         return h
 
@@ -271,8 +271,8 @@ class GNN_node(torch.nn.Module):
 
         h_list = [self.node_encoder(x)]
         for layer in range(self.num_layer):
-
             h = self.convs[layer](h_list[layer], edge_index, edge_attr)
+            
             h = self.batch_norms[layer](h)
 
             if layer == self.num_layer - 1:

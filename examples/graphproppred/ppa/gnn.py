@@ -21,7 +21,7 @@ class GAT(torch.nn.Module):
         self.node_encoder = torch.nn.Embedding(2, emb_dim) # uniform input node embedding
         self.edge_encoder = torch.nn.Linear(9, emb_dim)
 
-        self.layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
+        #self.layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
 
         #GATLayer(self, emb_dim, num_heads):
         self.layers = torch.nn.ModuleList([GATLayer(emb_dim, num_heads) for _ in range(num_layer)])
@@ -34,7 +34,7 @@ class GAT(torch.nn.Module):
         n_emb = self.node_encoder(x)
         e_emb = self.edge_encoder(edge_attr)    
 
-        h = self.layer_norm(n_emb)
+        h = n_emb # self.layer_norm(n_emb)
 
         for layer in range(self.num_layer):
             # def forward(self, node_embed, edge_emb, edge_index):
@@ -52,7 +52,6 @@ class GNN(torch.nn.Module):
             num_tasks (int): number of labels to be predicted
             virtual_node (bool): whether to add virtual node or not
         '''
-
         super(GNN, self).__init__()
 
         self.num_layer = num_layer

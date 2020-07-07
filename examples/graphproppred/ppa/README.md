@@ -28,6 +28,10 @@ python main_pyg.py --gnn gat --filename /tmp/gat_ppa --device 1 --batch_size 32 
 
 python main_pyg.py --gnn gat --filename /tmp/gat_ppa --device 1 --batch_size 32 --lr 0.0001
 
+python main_pyg.py --gnn gcn --filename /tmp/gat_pcn --device 2 --batch_size 32  #--lr 0.0001
+
+python main_pyg.py --gnn gat --filename /tmp/gat_v2_ppa --device 0 --batch_size 32 --lr 0.001
+
 ## References
 [1] Xu, K., Hu, W., Leskovec, J., & Jegelka, S. (2019). How powerful are graph neural networks?. ICLR 2019
 
