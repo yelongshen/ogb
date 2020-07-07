@@ -94,30 +94,22 @@ class GATLayer(torch.nn.Module):
         super().__init__()
         #self.mlp = torch.nn.Sequential(torch.nn.Linear(emb_dim, 2*emb_dim), torch.nn.BatchNorm1d(2*emb_dim), torch.nn.ReLU(), torch.nn.Linear(2*emb_dim, emb_dim))
         #self.eps = torch.nn.Parameter(torch.Tensor([0]))
-        
         #self.edge_encoder = torch.nn.Linear(7, emb_dim)
-
+        self.edge_encoder = torch.nn.Linear(7, emb_dim)
         self.mlp = torch.nn.Sequential(torch.nn.Linear(emb_dim, 2*emb_dim), torch.nn.BatchNorm1d(2*emb_dim), torch.nn.ReLU(), torch.nn.Linear(2*emb_dim, emb_dim))
         self.eps = torch.nn.Parameter(torch.Tensor([0]))
-
         #self.h_dropout = nn.Dropout(hid_dropout)
-
         #self.final_layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
 
-    def forward(self, node_embed, edge_emb, edge_index):
+    def forward(self, node_embed, edge_index, edge_attr):
+        edge_emb = self.edge_encoder(edge_attr)
         #x_i = node_embed[edge_index[0]]
         x_j = node_embed[edge_index[1]]
-
         #edge_embedding = self.edge_encoder(edge_attr)
         x_j = F.relu(edge_emb + x_j) # torch.cat([edge_emb, x_j], 1)
-
         _v = torch_scatter.scatter_add(x_j, edge_index[0], dim=0)
-
         out = self.mlp((1 + self.eps) * node_embed +  _v)
-
         return out
-
-
 
 ### GIN convolution along the graph structure
 class GINConv(MessagePassing):
@@ -172,7 +164,6 @@ class GCNConv(MessagePassing):
     def update(self, aggr_out):
         return aggr_out
 
-
 ### GNN to generate node embedding
 class GNN_node(torch.nn.Module):
     """
@@ -183,9 +174,7 @@ class GNN_node(torch.nn.Module):
         '''
             emb_dim (int): node embedding dimensionality
             num_layer (int): number of GNN message passing layers
-
         '''
-
         super(GNN_node, self).__init__()
         self.num_layer = num_layer
         self.drop_ratio = drop_ratio

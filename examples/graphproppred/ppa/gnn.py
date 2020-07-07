@@ -9,39 +9,56 @@ from conv import GNN_node, GNN_node_Virtualnode, GATLayer
 from torch_scatter import scatter_mean
 
 class GAT(torch.nn.Module):
-    def __init__(self, num_class, num_layer = 5, emb_dim = 256, num_heads=8):
+    def __init__(self, num_class, num_layer = 5, emb_dim = 256, num_heads=8, drop_ratio = 0.1):
         super(GAT, self).__init__()
 
         self.num_class = num_class
         self.emb_dim = emb_dim
         self.num_layer = num_layer
+        self.drop_ratio = drop_ratio
 
         # node feature dimension 2;
         # edge feature dimension 9;
-        self.node_encoder = torch.nn.Embedding(2, emb_dim) # uniform input node embedding
-        self.edge_encoder = torch.nn.Linear(9, emb_dim)
+        self.node_encoder = torch.nn.Embedding(1, emb_dim) # uniform input node embedding
+        
+        #self.edge_encoder = torch.nn.Linear(9, emb_dim)
 
         #self.layer_norm = torch.nn.LayerNorm(emb_dim, eps=1e-6) 
 
         #GATLayer(self, emb_dim, num_heads):
         self.layers = torch.nn.ModuleList([GATLayer(emb_dim, num_heads) for _ in range(num_layer)])
 
+        self.pool = global_mean_pool
+
         self.graph_pred_linear = torch.nn.Linear(self.emb_dim, self.num_class)
         
-    def forward(self, x, edge_index, edge_attr, batch, batch_size):
+    def forward(self, batched_data): # x, edge_index, edge_attr, batch, batch_size):
+        x, edge_index, edge_attr, batch = batched_data.x, batched_data.edge_index, batched_data.edge_attr, batched_data.batch
+        h_list = [self.node_encoder(x)]
+        for layer in range(self.num_layer):
+            h = self.convs[layer](h_list[layer], edge_index, edge_attr)
+            #h = self.batch_norms[layer](h)
+            if layer < self.num_layer - 1:
+                h = F.relu(h)
+            h_list.append(h)
+
+        h_node = h_list[-1]
+        h_graph = self.pool(h_node, batch)
+        return self.graph_pred_linear(h_graph)
+
         #x, edge_index, edge_attr, batch = batched_data.x, batched_data.edge_index, batched_data.edge_attr, batched_data.batch
         # node embedding.
-        n_emb = self.node_encoder(x)
-        e_emb = self.edge_encoder(edge_attr)    
+        # n_emb = self.node_encoder(x)
+        # e_emb = self.edge_encoder(edge_attr)    
 
-        h = n_emb # self.layer_norm(n_emb)
+        # h = n_emb # self.layer_norm(n_emb)
 
-        for layer in range(self.num_layer):
-            # def forward(self, node_embed, edge_emb, edge_index):
-            h = self.layers[layer](h, e_emb, edge_index)
+        # for layer in range(self.num_layer):
+        #     # def forward(self, node_embed, edge_emb, edge_index):
+        #     h = self.layers[layer](h, e_emb, edge_index)
 
-        h_graph = h[-batch_size:]
-        return self.graph_pred_linear(h_graph)
+        # h_graph = h[-batch_size:]
+        # return self.graph_pred_linear(h_graph)
 
 
 class GNN(torch.nn.Module):
@@ -69,7 +86,6 @@ class GNN(torch.nn.Module):
             self.gnn_node = GNN_node_Virtualnode(num_layer, emb_dim, JK = JK, drop_ratio = drop_ratio, residual = residual, gnn_type = gnn_type)
         else:
             self.gnn_node = GNN_node(num_layer, emb_dim, JK = JK, drop_ratio = drop_ratio, residual = residual, gnn_type = gnn_type)
-
 
         ### Pooling function to generate whole-graph embeddings
         if self.graph_pooling == "sum":

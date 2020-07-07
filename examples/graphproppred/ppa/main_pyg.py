@@ -13,7 +13,6 @@ import torch.nn.functional as F
 from util import AverageMeter
 from progress.bar import Bar as Bar
 
-
 ### importing OGB
 from ogb.graphproppred import PygGraphPropPredDataset, Evaluator
 
@@ -31,10 +30,10 @@ def add_virtualnode(graph, device):
         vn_node_num.append(list(graph.batch[:]).count(b))
 
     # new node batch.
-    vn_batch = torch.cat([graph.batch[:], torch.tensor([m for m in range(0,batch_size)], dtype=torch.long)]).to(device)
+    vn_batch = torch.cat([graph.batch[:], torch.tensor([m for m in range(0,batch_size)], dtype=torch.long)]) #.to(device)
 
     # new node type.
-    vn_x = torch.cat([graph.x[:], torch.tensor([1 for _ in range(0, batch_size)], dtype=torch.long)]).to(device)
+    vn_x = torch.cat([graph.x[:], torch.tensor([1 for _ in range(0, batch_size)], dtype=torch.long)]) #.to(device)
 
     edge_fea_num = graph.edge_attr.shape[1] 
     n_edge_attr = []
@@ -43,7 +42,6 @@ def add_virtualnode(graph, device):
     s_idx = 0
     for b in range(0, batch_size):
         root_id = old_node_num + b
-        
         
         for s in range(vn_node_num[b]):
             n_edges_1.append(root_id)
@@ -57,17 +55,21 @@ def add_virtualnode(graph, device):
         s_idx = s_idx + vn_node_num[b]
 
     # new edge index.
-    vn_edge_index = torch.cat([graph.edge_index, torch.tensor([n_edges_1, n_edges_2], dtype=torch.long)], dim=1).to(device)
+    vn_edge_index = torch.cat([graph.edge_index, torch.tensor([n_edges_1, n_edges_2], dtype=torch.long)], dim=1) #.to(device)
 
     _edge_attr = F.pad(input=graph.edge_attr, pad=(0,2,0,0), mode='constant', value=0.0)
 
     # new edge attr.
-    vn_edge_attr = torch.cat([_edge_attr, torch.tensor(n_edge_attr)]).to(device)
+    vn_edge_attr = torch.cat([_edge_attr, torch.tensor(n_edge_attr)]) #.to(device)
 
     # new edge label.
-    vn_y = graph.y.to(device)
+    #vn_y = graph.y#.to(device)
+    graph.x = vn_x
+    graph.batch = vn_batch
+    graph.edge_index = vn_edge_index
+    graph.edge_attr = vn_edge_attr
 
-    return vn_x, vn_batch, vn_edge_index, vn_edge_attr, vn_y
+    return graph # vn_x, vn_batch, vn_edge_index, vn_edge_attr, vn_y
 
 
 
@@ -83,14 +85,13 @@ def train(model, device, loader, optimizer, is_virtual_node = False):
             pass
         else:
             if is_virtual_node:
-                x, vn_batch, edge_index, edge_attr, y = add_virtualnode(batch, device)    
-                #     def forward(self, x, edge_index, edge_attr, batch, batch_size):
-                batch_size = batch.y.shape[0]
-                pred = model(x, edge_index, edge_attr, vn_batch, batch_size)
-            else:
-                batch = batch.to(device)    
-                pred = model(batch)
-                y = batch.y
+                batch = add_virtualnode(batch, device)    
+            
+            batch = batch.to(device)
+            batch_size = batch.y.shape[0]
+            y = batch.y
+            
+            pred = model(batch)
             
             optimizer.zero_grad()
             loss = multicls_criterion(pred.to(torch.float32), y.view(-1,))
@@ -121,14 +122,17 @@ def eval(model, device, loader, evaluator, is_virtual_node = False):
             pass
         else:
             if is_virtual_node:
-                x, vn_batch, edge_index, edge_attr, y = add_virtualnode(batch, device)    
-                batch_size = batch.y.shape[0]
-                pred = model(x, edge_index, edge_attr, vn_batch, batch_size)
-            else:
-                batch = batch.to(device)
-                with torch.no_grad():
-                    pred = model(batch)
-                y = batch.y
+                batch = add_virtualnode(batch, device)    
+            
+            #
+            #    pred = model(x, edge_index, edge_attr, vn_batch, batch_size)
+            #else:
+            batch = batch.to(device)
+            batch_size = batch.y.shape[0]
+
+            with torch.no_grad():
+                pred = model(batch)
+            y = batch.y
 
             y_true.append(y.view(-1,1).detach().cpu())
             y_pred.append(torch.argmax(pred.detach(), dim = 1).view(-1,1).cpu())
@@ -202,7 +206,9 @@ def main():
     elif args.gnn == 'gat':
         #def __init__(self, num_class, num_layer = 5, emb_dim = 256, num_heads=8):
         model = GAT(num_class = dataset.num_classes, num_layer = args.num_layer, emb_dim = args.emb_dim, num_heads = 8).to(device)
-        is_virtual_node = True
+        #is_virtual_node = True
+    #elif args.gnn == 'gat_v2':
+    #   model = GAT(num_class = dataset.num_classes, num_layer = args.num_layer, emb_dim = args.emb_dim, num_heads = 8).to(device)
     else:
         raise ValueError('Invalid GNN type')
 
