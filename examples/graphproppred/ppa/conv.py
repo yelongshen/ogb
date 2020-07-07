@@ -109,7 +109,7 @@ class GATLayer(torch.nn.Module):
         x_j = node_embed[edge_index[1]]
 
         #edge_embedding = self.edge_encoder(edge_attr)
-        x_j = F.ReLU(edge_emb + x_j) # torch.cat([edge_emb, x_j], 1)
+        x_j = F.relu(edge_emb + x_j) # torch.cat([edge_emb, x_j], 1)
 
         _v = torch_scatter.scatter_add(x_j, edge_index[0], dim=0)
 
